@@ -1,0 +1,16 @@
+# Node / Python / system
+__pycache__/
+*.pyc
+.env
+.env.local
+.env.*.local
+
+# Docker volumes and data
+pgdata/
+miniodata/
+outputs/
+logs/
+
+# Python virtualenv
+venv/
+.env

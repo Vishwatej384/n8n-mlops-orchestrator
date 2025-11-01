@@ -1,0 +1,64 @@
+version: "3.8"
+services:
+
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_USER: n8n
+      POSTGRES_PASSWORD: n8n
+      POSTGRES_DB: n8n
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  n8n:
+    image: n8nio/n8n:latest
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=n8n
+      - DB_POSTGRESDB_USER=n8n
+      - DB_POSTGRESDB_PASSWORD=n8n
+      - N8N_HOST=0.0.0.0
+      - N8N_PORT=5678
+      - N8N_BASIC_AUTH_ACTIVE=false
+      - N8N_EDITOR_BASE_URL=http://localhost:5678
+      - GENERIC_TIMEZONE=Asia/Kolkata
+    ports:
+      - "5678:5678"
+    volumes:
+      - ./workflows:/home/node/.n8n/workflows
+      - ./outputs:/data/outputs
+      - ./logs:/data/logs
+    depends_on:
+      - postgres
+      - minio
+    restart: unless-stopped
+
+  minio:
+    image: minio/minio:latest
+    command: server /data
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "9000:9000"
+    volumes:
+      - miniodata:/data
+    restart: unless-stopped
+
+  streamlit:
+    image: python:3.11-slim
+    working_dir: /app
+    volumes:
+      - ./streamlit_app:/app
+      - ./outputs:/app/outputs:ro
+    command: bash -lc "pip install -r requirements.txt && streamlit run app.py --server.port 8501 --server.address 0.0.0.0"
+    ports:
+      - "8501:8501"
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  miniodata:
